@@ -60,10 +60,10 @@
 				592205F4296DAAA5007F7677 /* Manager */,
 				592205E2296DA885007F7677 /* Jumping_Dino_iPadApp.swift */,
 				592205E4296DA885007F7677 /* ContentView.swift */,
+				592205F7296DABE1007F7677 /* CameraViewController.swift */,
+				592205F2296DAA98007F7677 /* DinoCanvasView.swift */,
 				592205E6296DA886007F7677 /* Assets.xcassets */,
 				592205E8296DA886007F7677 /* Preview Content */,
-				592205F2296DAA98007F7677 /* DinoCanvasView.swift */,
-				592205F7296DABE1007F7677 /* CameraViewController.swift */,
 			);
 			path = "Jumping Dino iPad";
 			sourceTree = "<group>";

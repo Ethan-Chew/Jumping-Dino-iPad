@@ -9,13 +9,19 @@ import SwiftUI
 
 struct DinoCanvasView: View {
     
+    let width: CGFloat?
+    let height: CGFloat?
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        VStack {
+            Color.white
+        }
+        .frame(width: width, height: height)
     }
 }
 
-struct DinoCanvasView_Previews: PreviewProvider {
-    static var previews: some View {
-        DinoCanvasView()
-    }
-}
+//struct DinoCanvasView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        DinoCanvasView()
+//    }
+//}
