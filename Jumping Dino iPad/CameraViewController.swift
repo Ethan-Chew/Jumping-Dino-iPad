@@ -25,7 +25,14 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     // Layer UI for drawing Vision results
     var rootLayer: CALayer?
     var detectionOverlayLayer: CALayer?
+    var guidingLinesShapeLayer: CAShapeLayer?
     var detectedFaceRectangleShapeLayer: CAShapeLayer?
+    
+    // Game Data
+    var gameData = GameData()
+    
+    // Check Data timer
+    var timer = Timer()
     
     // Vision requests
     private var detectionRequests: [VNDetectFaceRectanglesRequest]?
@@ -43,6 +50,13 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         self.prepareVisionRequest()
         
         self.session?.startRunning()
+        
+        self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
+            if self.gameData.updateCalibratedPoint {
+                self.gameData.pointData.calibratedPoint = self.gameData.pointData.currentPoint
+                self.gameData.updateCalibratedPoint = false
+            }
+        })
     }
     
     override func didReceiveMemoryWarning() {
@@ -240,7 +254,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
             }
             
             guard let faceDetectionRequest = request as? VNDetectFaceRectanglesRequest,
-                let results = faceDetectionRequest.results as? [VNFaceObservation] else {
+                  let results = faceDetectionRequest.results else {
                     return
             }
             DispatchQueue.main.async {
@@ -289,21 +303,34 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         overlayLayer.position = CGPoint(x: rootLayer.bounds.midX, y: rootLayer.bounds.midY)
         
         let faceRectangleShapeLayer = CAShapeLayer()
-        faceRectangleShapeLayer.name = "RectangleOutlineLayer"
+        faceRectangleShapeLayer.name = "FaceMiddleLayer"
         faceRectangleShapeLayer.bounds = captureDeviceBounds
         faceRectangleShapeLayer.anchorPoint = normalizedCenterPoint
         faceRectangleShapeLayer.position = captureDeviceBoundsCenterPoint
-        faceRectangleShapeLayer.fillColor = nil
-        faceRectangleShapeLayer.strokeColor = UIColor.green.withAlphaComponent(0.7).cgColor
+        faceRectangleShapeLayer.fillColor = UIColor.green.withAlphaComponent(0.2).cgColor
+        faceRectangleShapeLayer.strokeColor = UIColor.green.withAlphaComponent(0.4).cgColor
         faceRectangleShapeLayer.lineWidth = 5
         faceRectangleShapeLayer.shadowOpacity = 0.7
         faceRectangleShapeLayer.shadowRadius = 5
         
+        let guidingLinesShapeLayer = CAShapeLayer()
+        guidingLinesShapeLayer.name = "GuidingLinesLayer"
+        guidingLinesShapeLayer.bounds = captureDeviceBounds
+        guidingLinesShapeLayer.anchorPoint = normalizedCenterPoint
+        guidingLinesShapeLayer.position = captureDeviceBoundsCenterPoint
+        guidingLinesShapeLayer.fillColor = UIColor.red.withAlphaComponent(0.2).cgColor
+        guidingLinesShapeLayer.strokeColor = UIColor.red.withAlphaComponent(0.7).cgColor
+        guidingLinesShapeLayer.lineWidth = 5
+        guidingLinesShapeLayer.shadowOpacity = 0.7
+        guidingLinesShapeLayer.shadowRadius = 5
+        
         overlayLayer.addSublayer(faceRectangleShapeLayer)
+        overlayLayer.addSublayer(guidingLinesShapeLayer)
         rootLayer.addSublayer(overlayLayer)
         
         self.detectionOverlayLayer = overlayLayer
         self.detectedFaceRectangleShapeLayer = faceRectangleShapeLayer
+        self.guidingLinesShapeLayer = guidingLinesShapeLayer
         
         self.updateLayerGeometry()
     }
@@ -370,29 +397,37 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         }
     }
     
-    fileprivate func addIndicators(to faceRectanglePath: CGMutablePath, for faceObservation: VNFaceObservation) {
+    fileprivate func addIndicators(faceRectanglePath: CGMutablePath, guidingLinesPath: CGMutablePath, for faceObservation: VNFaceObservation) {
         let displaySize = self.captureDeviceResolution
         
-        let faceBounds = VNImageRectForNormalizedRect(faceObservation.boundingBox, Int(displaySize.width), Int((displaySize.height/3)*2))
+        let faceBounds = VNImageRectForNormalizedRect(faceObservation.boundingBox, Int(displaySize.width), Int(displaySize.height))
         faceRectanglePath.addRect(faceBounds)
+
+        gameData.pointData.currentPoint = CGPoint(x: faceBounds.midX, y: faceBounds.midY)
+        
+        let ellipseHalfSize = faceBounds.height/3
+        faceRectanglePath.addEllipse(in: CGRect(x: faceBounds.midX - ellipseHalfSize, y: faceBounds.midY - ellipseHalfSize, width: ellipseHalfSize*2, height: ellipseHalfSize*2))
+
+        guidingLinesPath.addRect(CGRect(x: 0, y: Int(faceBounds.midY), width: Int(displaySize.width), height: 15))
     }
     
     /// - Tag: DrawPaths
     fileprivate func drawFaceObservations(_ faceObservations: [VNFaceObservation]) {
-        guard let faceRectangleShapeLayer = self.detectedFaceRectangleShapeLayer else {
-            return
-        }
+        guard let faceRectangleShapeLayer = self.detectedFaceRectangleShapeLayer else { return }
+        guard let lineShapeLayer = self.guidingLinesShapeLayer else { return }
         
         CATransaction.begin()
         
         CATransaction.setValue(NSNumber(value: true), forKey: kCATransactionDisableActions)
         
         let faceRectanglePath = CGMutablePath()
+        let guidingLinesPath = CGMutablePath()
         
         for faceObservation in faceObservations {
-            self.addIndicators(to: faceRectanglePath, for: faceObservation)
+            self.addIndicators(faceRectanglePath: faceRectanglePath, guidingLinesPath: guidingLinesPath, for: faceObservation)
         }
         
+        lineShapeLayer.path = guidingLinesPath
         faceRectangleShapeLayer.path = faceRectanglePath
         
         self.updateLayerGeometry()
@@ -485,7 +520,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
                 }
                 
                 guard let landmarksRequest = request as? VNDetectFaceLandmarksRequest,
-                    let results = landmarksRequest.results as? [VNFaceObservation] else {
+                      let results = landmarksRequest.results else {
                         return
                 }
                 
@@ -522,11 +557,17 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
 }
 
 struct CameraView: UIViewControllerRepresentable {
+    
+    @StateObject var gameData: GameData
+    
     func makeUIViewController(context: Context) -> UIViewController {
-        return CameraViewController()
+        let cameraViewController = CameraViewController()
+        cameraViewController.gameData = gameData
+        return cameraViewController
     }
     
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        
+//        viewController.calibratedPoint = gameData.calibratedPoint
+//        viewController.currentPoint = gameData.currentPoint
     }
 }

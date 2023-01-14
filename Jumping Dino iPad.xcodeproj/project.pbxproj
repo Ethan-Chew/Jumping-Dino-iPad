@@ -13,6 +13,7 @@
 		592205EA296DA886007F7677 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 592205E9296DA886007F7677 /* Preview Assets.xcassets */; };
 		592205F3296DAA98007F7677 /* DinoCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 592205F2296DAA98007F7677 /* DinoCanvasView.swift */; };
 		592205F8296DABE1007F7677 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 592205F7296DABE1007F7677 /* CameraViewController.swift */; };
+		59799A32297300E3007B809C /* GameData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59799A31297300E3007B809C /* GameData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		592205F2296DAA98007F7677 /* DinoCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DinoCanvasView.swift; sourceTree = "<group>"; };
 		592205F7296DABE1007F7677 /* CameraViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewController.swift; sourceTree = "<group>"; };
 		592205F9296DB619007F7677 /* Jumping-Dino-iPad-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Jumping-Dino-iPad-Info.plist"; sourceTree = SOURCE_ROOT; };
+		59799A31297300E3007B809C /* GameData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,8 +58,8 @@
 		592205E1296DA885007F7677 /* Jumping Dino iPad */ = {
 			isa = PBXGroup;
 			children = (
+				59799A30297300CA007B809C /* Manager */,
 				592205F9296DB619007F7677 /* Jumping-Dino-iPad-Info.plist */,
-				592205F4296DAAA5007F7677 /* Manager */,
 				592205E2296DA885007F7677 /* Jumping_Dino_iPadApp.swift */,
 				592205E4296DA885007F7677 /* ContentView.swift */,
 				592205F7296DABE1007F7677 /* CameraViewController.swift */,
@@ -76,9 +78,10 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		592205F4296DAAA5007F7677 /* Manager */ = {
+		59799A30297300CA007B809C /* Manager */ = {
 			isa = PBXGroup;
 			children = (
+				59799A31297300E3007B809C /* GameData.swift */,
 			);
 			path = Manager;
 			sourceTree = "<group>";
@@ -154,6 +157,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				592205F3296DAA98007F7677 /* DinoCanvasView.swift in Sources */,
+				59799A32297300E3007B809C /* GameData.swift in Sources */,
 				592205F8296DABE1007F7677 /* CameraViewController.swift in Sources */,
 				592205E5296DA885007F7677 /* ContentView.swift in Sources */,
 				592205E3296DA885007F7677 /* Jumping_Dino_iPadApp.swift in Sources */,

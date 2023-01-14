@@ -10,12 +10,13 @@ import SwiftUI
 struct ContentView: View {
     
     @State var score = 0
+    @ObservedObject var gameData = GameData()
     
     var body: some View {
         GeometryReader { reader in
             VStack {
                 ZStack {
-                    CameraView()
+                    CameraView(gameData: gameData)
                         .ignoresSafeArea()
                         .frame(height: (reader.size.height/3)*2)
                     VStack {
@@ -39,24 +40,25 @@ struct ContentView: View {
                             .font(.largeTitle)
                         HStack {
                             Button {
-                                
+                                gameData.updateCalibratedPoint = true
+                                print("Updated point from swiftui")
                             } label: {
                                 Text("Calibrate Position")
                                     .foregroundColor(.white)
                                     .padding()
                                     .background(Color(.systemBlue))
                                     .cornerRadius(10)
-                                    
+
                             }
                             Button {
-                                
+
                             } label: {
                                 Text("Reset Score")
                                     .foregroundColor(.white)
                                     .padding()
                                     .background(Color(.systemRed))
                                     .cornerRadius(10)
-                                    
+
                             }
 
                         }
@@ -67,6 +69,8 @@ struct ContentView: View {
                 }
                 .frame(height: reader.size.height/3)
                 
+            }.onAppear() {
+                print(reader.size)
             }
         }
     }
