@@ -25,6 +25,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     // Layer UI for drawing Vision results
     var rootLayer: CALayer?
     var detectionOverlayLayer: CALayer?
+    var jumpTargetShapeLayer: CAShapeLayer?
     var guidingLinesShapeLayer: CAShapeLayer?
     var detectedFaceRectangleShapeLayer: CAShapeLayer?
     
@@ -308,7 +309,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         faceRectangleShapeLayer.anchorPoint = normalizedCenterPoint
         faceRectangleShapeLayer.position = captureDeviceBoundsCenterPoint
         faceRectangleShapeLayer.fillColor = UIColor.green.withAlphaComponent(0.2).cgColor
-        faceRectangleShapeLayer.strokeColor = UIColor.green.withAlphaComponent(0.4).cgColor
+        faceRectangleShapeLayer.strokeColor = UIColor.green.withAlphaComponent(0.3).cgColor
         faceRectangleShapeLayer.lineWidth = 5
         faceRectangleShapeLayer.shadowOpacity = 0.7
         faceRectangleShapeLayer.shadowRadius = 5
@@ -319,19 +320,31 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         guidingLinesShapeLayer.anchorPoint = normalizedCenterPoint
         guidingLinesShapeLayer.position = captureDeviceBoundsCenterPoint
         guidingLinesShapeLayer.fillColor = UIColor.red.withAlphaComponent(0.2).cgColor
-        guidingLinesShapeLayer.strokeColor = UIColor.red.withAlphaComponent(0.7).cgColor
+        guidingLinesShapeLayer.strokeColor = UIColor.red.withAlphaComponent(0.3).cgColor
         guidingLinesShapeLayer.lineWidth = 5
         guidingLinesShapeLayer.shadowOpacity = 0.7
         guidingLinesShapeLayer.shadowRadius = 5
         
+        let jumpTargetShapeLayer = CAShapeLayer()
+        jumpTargetShapeLayer.name = "JumpTargetLayer"
+        jumpTargetShapeLayer.bounds = captureDeviceBounds
+        jumpTargetShapeLayer.anchorPoint = normalizedCenterPoint
+        jumpTargetShapeLayer.position = captureDeviceBoundsCenterPoint
+        jumpTargetShapeLayer.fillColor = UIColor.blue.withAlphaComponent(0.4).cgColor
+        jumpTargetShapeLayer.strokeColor = UIColor.blue.withAlphaComponent(0.4).cgColor
+        jumpTargetShapeLayer.lineWidth = 1
+        jumpTargetShapeLayer.shadowOpacity = 0.7
+        jumpTargetShapeLayer.shadowRadius = 5
+        
         overlayLayer.addSublayer(faceRectangleShapeLayer)
         overlayLayer.addSublayer(guidingLinesShapeLayer)
+        overlayLayer.addSublayer(jumpTargetShapeLayer)
         rootLayer.addSublayer(overlayLayer)
         
         self.detectionOverlayLayer = overlayLayer
         self.detectedFaceRectangleShapeLayer = faceRectangleShapeLayer
         self.guidingLinesShapeLayer = guidingLinesShapeLayer
-        
+        self.jumpTargetShapeLayer = jumpTargetShapeLayer
         self.updateLayerGeometry()
     }
     
@@ -397,16 +410,27 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         }
     }
     
-    fileprivate func addIndicators(faceRectanglePath: CGMutablePath, guidingLinesPath: CGMutablePath, for faceObservation: VNFaceObservation) {
+    fileprivate func addIndicators(faceRectanglePath: CGMutablePath, guidingLinesPath: CGMutablePath, jumpTargetPath: CGMutablePath, for faceObservation: VNFaceObservation) {
         let displaySize = self.captureDeviceResolution
         
         let faceBounds = VNImageRectForNormalizedRect(faceObservation.boundingBox, Int(displaySize.width), Int(displaySize.height))
-        faceRectanglePath.addRect(faceBounds)
+//        faceRectanglePath.addRect(faceBounds)
 
         gameData.pointData.currentPoint = CGPoint(x: faceBounds.midX, y: faceBounds.midY)
+        gameData.jumpYTarget = gameData.pointData.calibratedPoint.y + 150 // Jump offset
+        
+        if gameData.pointData.calibratedPoint.x != 0 && gameData.pointData.calibratedPoint.y != 0 {
+            jumpTargetPath.addRect(CGRect(x: 0, y: Int(gameData.jumpYTarget), width: Int(displaySize.width), height: 30))
+        }
+        
+        if gameData.pointData.calibratedPoint.x != 0 && gameData.pointData.calibratedPoint.y != 0 {
+            if self.gameData.pointData.currentPoint.y >= self.gameData.jumpYTarget {
+                self.gameData.isJump = true
+            }
+        }
         
         let ellipseHalfSize = faceBounds.height/3
-        faceRectanglePath.addEllipse(in: CGRect(x: faceBounds.midX - ellipseHalfSize, y: faceBounds.midY - ellipseHalfSize, width: ellipseHalfSize*2, height: ellipseHalfSize*2))
+        faceRectanglePath.addEllipse(in: CGRect(x: faceBounds.midX - ellipseHalfSize, y: faceBounds.midY - (ellipseHalfSize/2), width: ellipseHalfSize*2, height: ellipseHalfSize))
 
         guidingLinesPath.addRect(CGRect(x: 0, y: Int(faceBounds.midY), width: Int(displaySize.width), height: 15))
     }
@@ -415,6 +439,7 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
     fileprivate func drawFaceObservations(_ faceObservations: [VNFaceObservation]) {
         guard let faceRectangleShapeLayer = self.detectedFaceRectangleShapeLayer else { return }
         guard let lineShapeLayer = self.guidingLinesShapeLayer else { return }
+        guard let jumpTargetLayer = self.jumpTargetShapeLayer else { return }
         
         CATransaction.begin()
         
@@ -422,12 +447,14 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         
         let faceRectanglePath = CGMutablePath()
         let guidingLinesPath = CGMutablePath()
+        let jumpTargetPath = CGMutablePath()
         
         for faceObservation in faceObservations {
-            self.addIndicators(faceRectanglePath: faceRectanglePath, guidingLinesPath: guidingLinesPath, for: faceObservation)
+            self.addIndicators(faceRectanglePath: faceRectanglePath, guidingLinesPath: guidingLinesPath, jumpTargetPath: jumpTargetPath, for: faceObservation)
         }
         
         lineShapeLayer.path = guidingLinesPath
+        jumpTargetLayer.path = jumpTargetPath
         faceRectangleShapeLayer.path = faceRectanglePath
         
         self.updateLayerGeometry()
