@@ -6,12 +6,20 @@
 //
 
 import SwiftUI
+import SpriteKit
 
 struct ContentView: View {
     
     @State var score = 0
     @State var jump = 0
     @ObservedObject var gameData = GameData()
+    
+    var gameScene: SKScene {
+        let scene = JumpingDinoScene()
+        scene.size = CGSize(width: UIScreen.main.bounds.size.width, height: ((UIScreen.main.bounds.size.height/3)/3)*1.5)
+        scene.scaleMode = .fill
+        return scene
+    }
     
     var body: some View {
         GeometryReader { reader in
@@ -38,14 +46,16 @@ struct ContentView: View {
                 }
                 
                 VStack {
-                    Color.white
                     VStack {
                         VStack {
+                            
                             Text("Jumping Dino on iPad")
                                 .bold()
                                 .font(.largeTitle)
+                                .foregroundColor(.black)
+                                .padding()
+                            
                             HStack {
-
                                 Button {
                                     gameData.updateCalibratedPoint = true
                                     print("Updated point from swiftui")
@@ -71,10 +81,14 @@ struct ContentView: View {
                             }
                         }
                         .padding()
-                        DinoCanvasView(width: reader.size.width, height: ((reader.size.height/3)/3)*1.5)
+                        
+                        SpriteView(scene: self.gameScene)
+                            .frame(width: reader.size.width, height: ((reader.size.height/3)/3)*2)
+                            .ignoresSafeArea()
                     }
                 }
                 .frame(height: reader.size.height/3)
+                .background(.white)
                 .ignoresSafeArea()
                 
                 VStack {
