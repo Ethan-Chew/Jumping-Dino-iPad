@@ -20,6 +20,7 @@ struct ContentView: View, JumpingDinoDelegate {
         scene.size = CGSize(width: UIScreen.main.bounds.size.width, height: ((UIScreen.main.bounds.size.height/3)/3)*1.5)
         scene.scaleMode = .fill
         scene.jumpingDinoDelegate = self
+        scene.view?.showsPhysics = true
         return scene
     }
     
@@ -121,7 +122,6 @@ struct ContentView: View, JumpingDinoDelegate {
                             isJump = true
                             try await Task.sleep(for: .seconds(0.5))
                             gameData.isJump = false
-                            isJump = false
                         }
                     }
                 }

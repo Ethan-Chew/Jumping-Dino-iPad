@@ -21,6 +21,12 @@ protocol JumpingDinoDelegate {
     var isJump: Bool { get set }
 }
 
+struct CollisionBitMask {
+    static let dino: UInt32 = 0x1 << 2
+    static let cactus: UInt32 = 0x1 << 3
+    static let ground: UInt32 = 0x1 << 1
+}
+
 class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     
     var jumpingDinoDelegate: JumpingDinoDelegate? = nil
@@ -38,10 +44,6 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     var removedCactusNum = 0
     var showCactusMinMax: [Double] = [3, 6.5]
     
-    // Collision BitMask
-    let dinoContact: UInt32 = 0x1 << 0
-    let cactusContact: UInt32 = 0x1 << 1
-    
     func setupGround() {
         for i in 0..<3 {
             let ground = SKSpriteNode(imageNamed: "DinosaurGameGround")
@@ -49,6 +51,12 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
             ground.size.width = frame.width
             ground.position = CGPoint(x: CGFloat(i) * size.width - 2, y: ground.size.height/2)
             ground.name = "Ground"
+            ground.physicsBody = SKPhysicsBody(rectangleOf: ground.frame.size)
+            ground.physicsBody?.isDynamic = false
+            ground.physicsBody?.allowsRotation = false
+            ground.physicsBody?.friction = 0
+            ground.physicsBody?.restitution = 0
+            ground.physicsBody?.categoryBitMask = CollisionBitMask.ground
             self.addChild(ground)
             groundHeight = ground.size.height
             
@@ -67,7 +75,15 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
         numOfCactusShown += 1
         cactusGroup.zPosition = 1
         cactusGroup.name = "Cactus \(numOfCactusShown)"
-        cactusGroup.physicsBody?.categoryBitMask = cactusContact
+        cactusGroup.physicsBody = SKPhysicsBody(rectangleOf: cactusGroup.frame.size)
+        cactusGroup.physicsBody?.mass = 1.0
+        cactusGroup.physicsBody?.isDynamic = false
+        cactusGroup.physicsBody?.allowsRotation = false
+        cactusGroup.physicsBody?.friction = 0
+        cactusGroup.physicsBody?.restitution = 0
+        cactusGroup.physicsBody?.categoryBitMask = CollisionBitMask.cactus
+        cactusGroup.physicsBody?.contactTestBitMask = CollisionBitMask.dino
+        cactusGroup.physicsBody?.collisionBitMask = CollisionBitMask.dino
         self.addChild(cactusGroup)
         
         showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
@@ -89,7 +105,6 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func updateCactusMovement(cactusNum: Int) {
-        print("Cactus \(cactusNum)", "in movement")
         self.enumerateChildNodes(withName: "Cactus \(cactusNum)") { (node, stop) in
             if let back = node as? SKLabelNode {
                 let move = CGPoint(x: -self.backgroundSpeed * CGFloat(self.deltaTime), y: 0)
@@ -104,27 +119,32 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    let dino = SKLabelNode(text: "🦖")
     override func didMove(to view: SKView) {
         scene?.backgroundColor = .white
+        physicsWorld.contactDelegate = self
         
         setupGround()
         
-        let dino = SKLabelNode(text: "🦖")
         dino.fontSize = 90
         dino.position = CGPoint(x: dino.fontSize/2+10, y: groundHeight/2)
         dino.zPosition = 1
         
         // Dino Physics
-        dino.physicsBody = SKPhysicsBody(circleOfRadius: dino.fontSize/4)
+        dino.physicsBody = SKPhysicsBody(rectangleOf: dino.frame.size)
+        dino.physicsBody?.mass = 1.0
+        dino.physicsBody?.isDynamic = false
         dino.physicsBody?.allowsRotation = false
         dino.physicsBody?.friction = 0
         dino.physicsBody?.restitution = 0.1
-        dino.physicsBody?.categoryBitMask = dinoContact
-        addChild(dino)
+        dino.physicsBody?.categoryBitMask = CollisionBitMask.dino
+        dino.physicsBody?.contactTestBitMask = CollisionBitMask.cactus
+        dino.physicsBody?.collisionBitMask = CollisionBitMask.cactus
+        self.addChild(dino)
         
         // Game Physics
         physicsBody = SKPhysicsBody(edgeLoopFrom: frame.inset(by: UIEdgeInsets(top: groundHeight/3, left: 0, bottom: 0, right: 0)))
-        physicsWorld.contactDelegate = self
+        physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         
         // Show Cactus
         showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
@@ -146,10 +166,10 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
                     backgroundSpeed += 4
                 }
                 if showCactusMinMax[0] >= 2.0 {
-                    showCactusMinMax[0] -= 0.1
+                    showCactusMinMax[0] += 0.1
                 }
                 if showCactusMinMax[1] >= 4.0 {
-                    showCactusMinMax[1] -= 0.1
+                    showCactusMinMax[1] += 0.1
                 }
             }
             
@@ -161,6 +181,13 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
             deltaTime = currentTime - lastUpdateTimeInterval
             lastUpdateTimeInterval = currentTime
             
+            guard let gotJump = jumpingDinoDelegate?.isJump else { return }
+            if gotJump {
+                print("a")
+                dino.physicsBody?.applyImpulse(CGVector(dx: 0, dy: 600))
+                jumpingDinoDelegate?.isJump = false
+            }
+            
             updateGroundMovement()
             if numOfCactusShown - removedCactusNum != 0 {
                 for cactusNum in 1...numOfCactusShown - removedCactusNum {
@@ -171,7 +198,7 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
-        jumpingDinoDelegate?.isGame = false
-        backgroundSpeed = 0
+        print(contact)
+        print("Contact")
     }
 }
