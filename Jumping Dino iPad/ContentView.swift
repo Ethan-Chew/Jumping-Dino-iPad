@@ -70,7 +70,7 @@ struct ContentView: View {
                                 Button {
 
                                 } label: {
-                                    Text("Reset Score")
+                                    Text("Reset Game")
                                         .foregroundColor(.white)
                                         .padding()
                                         .background(Color(.systemRed))
