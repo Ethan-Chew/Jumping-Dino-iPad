@@ -8,16 +8,18 @@
 import SwiftUI
 import SpriteKit
 
-struct ContentView: View {
+struct ContentView: View, JumpingDinoDelegate {
     
+    @State var isGame: Bool = false
+    @State var isJump: Bool = false
     @State var score = 0
-    @State var jump = 0
     @ObservedObject var gameData = GameData()
     
     var gameScene: SKScene {
         let scene = JumpingDinoScene()
         scene.size = CGSize(width: UIScreen.main.bounds.size.width, height: ((UIScreen.main.bounds.size.height/3)/3)*1.5)
         scene.scaleMode = .fill
+        scene.jumpingDinoDelegate = self
         return scene
     }
     
@@ -58,7 +60,7 @@ struct ContentView: View {
                             HStack {
                                 Button {
                                     gameData.updateCalibratedPoint = true
-                                    print("Updated point from swiftui")
+                                    self.isGame = true
                                 } label: {
                                     Text("Calibrate Position")
                                         .foregroundColor(.white)
@@ -100,7 +102,7 @@ struct ContentView: View {
                             .background(.red.opacity(0.8))
                             .cornerRadius(9)
                     }
-                    if gameData.isJump {
+                    if isJump {
                         Text("Boing!")
                             .font(.largeTitle)
                             .bold()
@@ -116,9 +118,10 @@ struct ContentView: View {
                 .onChange(of: gameData.isJump) { _ in
                     Task {
                         if gameData.isJump {
-                            jump += 1
+                            isJump = true
                             try await Task.sleep(for: .seconds(0.5))
                             gameData.isJump = false
+                            isJump = false
                         }
                     }
                 }
@@ -128,6 +131,6 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        ContentView(isGame: false)
     }
 }

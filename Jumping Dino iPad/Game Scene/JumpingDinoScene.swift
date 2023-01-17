@@ -16,9 +16,14 @@ fileprivate func += (left: inout CGPoint, right: CGPoint) {
     left = left + right
 }
 
-class JumpingDinoScene: SKScene {
+protocol JumpingDinoDelegate {
+    var isGame: Bool { get set }
+    var isJump: Bool { get set }
+}
+
+class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     
-    var gameData = GameData()
+    var jumpingDinoDelegate: JumpingDinoDelegate? = nil
     
     // Game Info
     let cactusGroup = [1, 2, 3]
@@ -32,6 +37,10 @@ class JumpingDinoScene: SKScene {
     var numOfCactusShown = 0
     var removedCactusNum = 0
     var showCactusMinMax: [Double] = [3, 6.5]
+    
+    // Collision BitMask
+    let dinoContact: UInt32 = 0x1 << 0
+    let cactusContact: UInt32 = 0x1 << 1
     
     func setupGround() {
         for i in 0..<3 {
@@ -58,6 +67,7 @@ class JumpingDinoScene: SKScene {
         numOfCactusShown += 1
         cactusGroup.zPosition = 1
         cactusGroup.name = "Cactus \(numOfCactusShown)"
+        cactusGroup.physicsBody?.categoryBitMask = cactusContact
         self.addChild(cactusGroup)
         
         showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
@@ -109,10 +119,12 @@ class JumpingDinoScene: SKScene {
         dino.physicsBody?.allowsRotation = false
         dino.physicsBody?.friction = 0
         dino.physicsBody?.restitution = 0.1
+        dino.physicsBody?.categoryBitMask = dinoContact
         addChild(dino)
         
         // Game Physics
         physicsBody = SKPhysicsBody(edgeLoopFrom: frame.inset(by: UIEdgeInsets(top: groundHeight/3, left: 0, bottom: 0, right: 0)))
+        physicsWorld.contactDelegate = self
         
         // Show Cactus
         showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
@@ -120,36 +132,46 @@ class JumpingDinoScene: SKScene {
     }
     
     override func update(_ currentTime: TimeInterval) {
-        if lastUpdateTimeInterval == 0 {
+        guard let gotGame = jumpingDinoDelegate?.isGame else { return }
+        if gotGame {
+            if lastUpdateTimeInterval == 0 {
+                lastUpdateTimeInterval = currentTime
+                lastTime = Int(currentTime)
+                lastCactusTime = Int(currentTime)
+            }
+            
+            if lastTime != Int(currentTime) { // Updates every second
+                lastTime = Int(currentTime)
+                if backgroundSpeed < 300 {
+                    backgroundSpeed += 4
+                }
+                if showCactusMinMax[0] >= 2.0 {
+                    showCactusMinMax[0] -= 0.1
+                }
+                if showCactusMinMax[1] >= 4.0 {
+                    showCactusMinMax[1] -= 0.1
+                }
+            }
+            
+            if Int(Double(lastCactusTime) + showCactusTimer) == Int(currentTime) {
+                lastCactusTime = Int(currentTime)
+                setupCactus(cactusGroup[Int.random(in: 0..<3)])
+            }
+            
+            deltaTime = currentTime - lastUpdateTimeInterval
             lastUpdateTimeInterval = currentTime
-            lastTime = Int(currentTime)
-            lastCactusTime = Int(currentTime)
-        }
-        
-        if lastTime != Int(currentTime) { // Updates every second
-            lastTime = Int(currentTime)
-            backgroundSpeed += 4
-            if showCactusMinMax[0] >= 2.0 {
-                showCactusMinMax[0] -= 0.1
-            }
-            if showCactusMinMax[1] >= 4.0 {
-                showCactusMinMax[1] -= 0.1
+            
+            updateGroundMovement()
+            if numOfCactusShown - removedCactusNum != 0 {
+                for cactusNum in 1...numOfCactusShown - removedCactusNum {
+                    updateCactusMovement(cactusNum: cactusNum + removedCactusNum)
+                }
             }
         }
-        
-        if Int(Double(lastCactusTime) + showCactusTimer) == Int(currentTime) {
-            lastCactusTime = Int(currentTime)
-            setupCactus(cactusGroup[Int.random(in: 0..<3)])
-        }
-        
-        deltaTime = currentTime - lastUpdateTimeInterval
-        lastUpdateTimeInterval = currentTime
-        
-        updateGroundMovement()
-        if numOfCactusShown - removedCactusNum != 0 {
-            for cactusNum in 1...numOfCactusShown - removedCactusNum {
-                updateCactusMovement(cactusNum: cactusNum + removedCactusNum)
-            }
-        }
+    }
+    
+    func didBegin(_ contact: SKPhysicsContact) {
+        jumpingDinoDelegate?.isGame = false
+        backgroundSpeed = 0
     }
 }
