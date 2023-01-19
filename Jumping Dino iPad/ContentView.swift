@@ -12,7 +12,10 @@ struct ContentView: View, JumpingDinoDelegate {
     
     @State var isGame: Bool = false
     @State var isJump: Bool = false
+    @State var resetGame: Bool = false
+    
     @State var score = 0
+    let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
     @ObservedObject var gameData = GameData()
     
     var gameScene: SKScene {
@@ -49,46 +52,33 @@ struct ContentView: View, JumpingDinoDelegate {
                 }
                 
                 VStack {
-                    VStack {
-                        VStack {
-                            
-                            Text("Jumping Dino on iPad")
-                                .bold()
-                                .font(.largeTitle)
-                                .foregroundColor(.black)
+                    HStack {
+                        Button {
+                            gameData.updateCalibratedPoint = true
+                            self.isGame = true
+                        } label: {
+                            Text("Calibrate Position")
+                                .foregroundColor(.white)
                                 .padding()
+                                .background(Color(.systemBlue))
+                                .cornerRadius(10)
                             
-                            HStack {
-                                Button {
-                                    gameData.updateCalibratedPoint = true
-                                    self.isGame = true
-                                } label: {
-                                    Text("Calibrate Position")
-                                        .foregroundColor(.white)
-                                        .padding()
-                                        .background(Color(.systemBlue))
-                                        .cornerRadius(10)
-
-                                }
-                                Button {
-
-                                } label: {
-                                    Text("Reset Game")
-                                        .foregroundColor(.white)
-                                        .padding()
-                                        .background(Color(.systemRed))
-                                        .cornerRadius(10)
-
-                                }
-
-                            }
                         }
-                        .padding()
-                        
-                        SpriteView(scene: self.gameScene)
-                            .frame(width: reader.size.width, height: ((reader.size.height/3)/3)*2)
-                            .ignoresSafeArea()
-                    }
+                        Button {
+                            score = 0
+                            resetGame = true
+                        } label: {
+                            Text("Reset Game")
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color(.systemRed))
+                                .cornerRadius(10)
+                        }
+                    }.frame(height: (reader.size.height/3)/4)
+                    
+                    SpriteView(scene: self.gameScene)
+                        .frame(width: reader.size.width, height: ((reader.size.height/3)/4)*3)
+                        .ignoresSafeArea()
                 }
                 .frame(height: reader.size.height/3)
                 .background(.white)
@@ -115,16 +105,44 @@ struct ContentView: View, JumpingDinoDelegate {
                 }
                 .padding(.top, 50)
                 
-            }.ignoresSafeArea()
-                .onChange(of: gameData.isJump) { _ in
-                    Task {
-                        if gameData.isJump {
-                            isJump = true
-                            try await Task.sleep(for: .seconds(0.5))
-                            gameData.isJump = false
+                if !isGame && gameData.pointData.calibratedPoint.x != 0 {
+                    VStack {
+                        Spacer()
+                        
+                        VStack(alignment: .center) {
+                            Text("Game Over!")
+                                .font(.largeTitle)
+                                .bold()
+                            Text("You hit a cactus!")
+                                .font(.title2)
+                                .padding(.bottom, 30)
+                            Text("**Last Score:** \(score)")
+                                .font(.title3)
                         }
+                        .padding(40)
+                        .background(.black.opacity(0.8))
+                        .cornerRadius(9)
+                        
+                        Spacer()
                     }
                 }
+                
+            }
+            .ignoresSafeArea()
+            .onChange(of: gameData.isJump) { _ in
+                Task {
+                    if gameData.isJump {
+                        isJump = true
+                        try await Task.sleep(for: .seconds(0.6))
+                        gameData.isJump = false
+                    }
+                }
+            }
+            .onReceive(timer) { _ in
+                if isGame {
+                    score += 1
+                }
+            }
         }
     }
 }
