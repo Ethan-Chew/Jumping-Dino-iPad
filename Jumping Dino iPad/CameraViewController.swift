@@ -50,7 +50,9 @@ class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBuff
         
         self.prepareVisionRequest()
         
-        self.session?.startRunning()
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.session?.startRunning()
+        }
         
         self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
             if self.gameData.updateCalibratedPoint {

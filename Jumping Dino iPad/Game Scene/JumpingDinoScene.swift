@@ -34,7 +34,7 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     
     // Game Info
     let cactusGroup = [1, 2, 3]
-    var backgroundSpeed: CGFloat = 85
+    var backgroundSpeed: CGFloat = 100
     var lastUpdateTimeInterval: TimeInterval = 0
     var deltaTime: TimeInterval = 0
     var groundHeight: CGFloat = 0
@@ -65,29 +65,32 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     }
     
     private func setupCactus(_ num: Int) {
-        var cactus = ""
-        for _ in 0..<num {
-            cactus += "🌵"
-        }
-        
-        let cactusGroup = SKLabelNode(text: cactus)
-        cactusGroup.position = CGPoint(x: (scene?.size.width)!+30, y: groundHeight/2)
-        cactusGroup.fontSize = 45
-        numOfCactusShown += 1
-        cactusGroup.zPosition = 1
-        cactusGroup.name = "Cactus \(numOfCactusShown)"
-        cactusGroup.physicsBody = SKPhysicsBody(rectangleOf: cactusGroup.frame.size)
-        cactusGroup.physicsBody?.mass = 1.0
-        cactusGroup.physicsBody?.isDynamic = false
-        cactusGroup.physicsBody?.allowsRotation = false
-        cactusGroup.physicsBody?.friction = 0
-        cactusGroup.physicsBody?.restitution = 0
-        cactusGroup.physicsBody?.categoryBitMask = CollisionBitMask.cactus
-        cactusGroup.physicsBody?.contactTestBitMask = CollisionBitMask.dino
-        cactusGroup.physicsBody?.collisionBitMask = CollisionBitMask.dino
-        self.addChild(cactusGroup)
-                
-        showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
+//        var cactus = ""
+//        for _ in 0..<num {
+//            cactus += "🌵"
+//        }
+//
+//        let cactusGroup = SKLabelNode(text: cactus)
+//        cactusGroup.position = CGPoint(x: (scene?.size.width)!+30, y: groundHeight/2)
+//        cactusGroup.fontSize = 45
+//        numOfCactusShown += 1
+//        cactusGroup.zPosition = 1
+//        cactusGroup.name = "Cactus \(numOfCactusShown)"
+//        cactusGroup.physicsBody = SKPhysicsBody(rectangleOf: cactusGroup.frame.size)
+//        cactusGroup.physicsBody?.mass = 1.0
+//        cactusGroup.physicsBody?.isDynamic = false
+//        cactusGroup.physicsBody?.allowsRotation = false
+//        cactusGroup.physicsBody?.friction = 0
+//        cactusGroup.physicsBody?.restitution = 0
+//        cactusGroup.physicsBody?.categoryBitMask = CollisionBitMask.cactus
+//        cactusGroup.physicsBody?.contactTestBitMask = CollisionBitMask.dino
+//        cactusGroup.physicsBody?.collisionBitMask = CollisionBitMask.dino
+//        self.addChild(cactusGroup)
+//
+//        showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
+        let cactusImgs = ["cactus1", "cactus2", "cactus3", "doubleCactus", "tripleCactus"]
+        let cactusTexture = SKTexture(image: UIImage.init(named: cactusImgs.randomElement()!)!)
+
     }
     
     private func updateGroundMovement() {
@@ -124,12 +127,14 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
                 back.removeFromParent()
                 let num = back.name?.components(separatedBy: " ")
                 self.removedCactusNum = Int(num![1])!
-                print("removed")
             }
         }
     }
     
+    // Nodes
     let dino = SKLabelNode(text: "🦖")
+    let cactus = SKNode()
+    
     override func didMove(to view: SKView) {
         scene?.backgroundColor = .white
         physicsWorld.contactDelegate = self
@@ -157,12 +162,39 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
         physicsBody = SKPhysicsBody(edgeLoopFrom: frame.inset(by: UIEdgeInsets(top: 0, left: 0, bottom: groundHeight/2, right: -100)))
         physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
         
-        // Show Cactus
-        showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
-        setupCactus(cactusGroup[Int.random(in: 0..<3)])
+        // Cactus
+        cactus.zPosition = 1
+        self.addChild(cactus)
     }
     
     override func update(_ currentTime: TimeInterval) {
+        guard let gotReset = jumpingDinoDelegate?.resetGame else { return }
+        if gotReset {
+            if self.numOfCactusShown - self.removedCactusNum != 0 {
+//                for child in self.children {
+//                    if let item = child as! SKLabelNode {
+//                        
+//                    }
+//                }
+            }
+            
+            self.backgroundSpeed = 85
+            self.lastUpdateTimeInterval = 0
+            self.deltaTime = 0
+            self.groundHeight = 0
+            self.lastTime = 0
+            self.showCactusTimer = 0.0
+            self.lastCactusTime = 0
+            self.numOfCactusShown = 0
+            self.removedCactusNum = 0
+            self.showCactusMinMax = [3, 6.5]
+            
+            self.jumpingDinoDelegate?.resetGame = false
+            self.jumpingDinoDelegate?.isGame = true
+            
+            print(self.children)
+        }
+        
         guard let gotGame = jumpingDinoDelegate?.isGame else { return }
         if gotGame {
             if lastUpdateTimeInterval == 0 {
@@ -173,7 +205,7 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
             
             if lastTime != Int(currentTime) { // Updates every second
                 lastTime = Int(currentTime)
-                if backgroundSpeed < 300 {
+                if backgroundSpeed < 400 {
                     backgroundSpeed += 4
                 }
                 if showCactusMinMax[0] >= 2.0 {
@@ -204,29 +236,6 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
                     updateCactusMovement(cactusNum: cactusNum + removedCactusNum)
                 }
             }
-        }
-        
-        guard let gotReset = jumpingDinoDelegate?.resetGame else { return }
-        if gotReset {
-            backgroundSpeed = 85
-            lastUpdateTimeInterval = 0
-            deltaTime = 0
-            groundHeight = 0
-            lastTime = 0
-            showCactusTimer = 0.0
-            lastCactusTime = 0
-            numOfCactusShown = 0
-            removedCactusNum = 0
-            showCactusMinMax = [3, 6.5]
-            
-            if numOfCactusShown - removedCactusNum != 0 {
-                for cactusNum in 1...numOfCactusShown - removedCactusNum {
-                    self.removeCactus(cactusNum: cactusNum + removedCactusNum)
-                }
-            }
-            
-            jumpingDinoDelegate?.resetGame = false
-            jumpingDinoDelegate?.isGame = true
         }
     }
     
