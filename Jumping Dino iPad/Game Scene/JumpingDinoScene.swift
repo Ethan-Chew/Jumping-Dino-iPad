@@ -64,32 +64,32 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    private func setupCactus(_ num: Int) {
-//        var cactus = ""
-//        for _ in 0..<num {
-//            cactus += "🌵"
-//        }
-//
-//        let cactusGroup = SKLabelNode(text: cactus)
-//        cactusGroup.position = CGPoint(x: (scene?.size.width)!+30, y: groundHeight/2)
-//        cactusGroup.fontSize = 45
-//        numOfCactusShown += 1
-//        cactusGroup.zPosition = 1
-//        cactusGroup.name = "Cactus \(numOfCactusShown)"
-//        cactusGroup.physicsBody = SKPhysicsBody(rectangleOf: cactusGroup.frame.size)
-//        cactusGroup.physicsBody?.mass = 1.0
-//        cactusGroup.physicsBody?.isDynamic = false
-//        cactusGroup.physicsBody?.allowsRotation = false
-//        cactusGroup.physicsBody?.friction = 0
-//        cactusGroup.physicsBody?.restitution = 0
-//        cactusGroup.physicsBody?.categoryBitMask = CollisionBitMask.cactus
-//        cactusGroup.physicsBody?.contactTestBitMask = CollisionBitMask.dino
-//        cactusGroup.physicsBody?.collisionBitMask = CollisionBitMask.dino
-//        self.addChild(cactusGroup)
-//
-//        showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
+    private func setupCactus() {
+        numOfCactusShown += 1
+        
         let cactusImgs = ["cactus1", "cactus2", "cactus3", "doubleCactus", "tripleCactus"]
+        let scale: CGFloat = 1.7
+        
         let cactusTexture = SKTexture(image: UIImage.init(named: cactusImgs.randomElement()!)!)
+        cactusTexture.filteringMode = .nearest
+        
+        let cactusSprite = SKSpriteNode(texture: cactusTexture)
+        cactusSprite.setScale(scale)
+        cactusSprite.name = "Cactus \(numOfCactusShown)"
+        cactusSprite.zPosition = 1
+        cactusSprite.position = CGPoint(x: (scene?.size.width)!+30, y: (groundHeight/2)*scale)
+        cactusSprite.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: cactusTexture.size().width, height: cactusTexture.size().height))
+        cactusSprite.physicsBody?.isDynamic = false
+        cactusSprite.physicsBody?.mass = 1.0
+        cactusSprite.physicsBody?.restitution = 0
+        cactusSprite.physicsBody?.allowsRotation = false
+        cactusSprite.physicsBody?.friction = 0
+        cactusSprite.physicsBody?.categoryBitMask = CollisionBitMask.cactus
+        cactusSprite.physicsBody?.contactTestBitMask = CollisionBitMask.dino
+        cactusSprite.physicsBody?.collisionBitMask = CollisionBitMask.dino
+        
+        cactus.addChild(cactusSprite)
+        showCactusTimer = Double.random(in: showCactusMinMax[0]...showCactusMinMax[1])
 
     }
     
@@ -109,8 +109,8 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func updateCactusMovement(cactusNum: Int) {
-        self.enumerateChildNodes(withName: "Cactus \(cactusNum)") { (node, stop) in
-            if let back = node as? SKLabelNode {
+        cactus.enumerateChildNodes(withName: "Cactus \(cactusNum)") { (node, stop) in
+            if let back = node as? SKSpriteNode {
                 let move = CGPoint(x: -self.backgroundSpeed * CGFloat(self.deltaTime), y: 0)
                 back.position += move
                 
@@ -122,8 +122,8 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     }
     
     private func removeCactus(cactusNum: Int) {
-        self.enumerateChildNodes(withName: "Cactus \(cactusNum)") { (node, stop) in
-            if let back = node as? SKLabelNode {
+        cactus.enumerateChildNodes(withName: "Cactus \(cactusNum)") { (node, stop) in
+            if let back = node as? SKSpriteNode {
                 back.removeFromParent()
                 let num = back.name?.components(separatedBy: " ")
                 self.removedCactusNum = Int(num![1])!
@@ -148,7 +148,7 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
         
         // Dino Physics
         dino.physicsBody = SKPhysicsBody(rectangleOf: dino.frame.size)
-        dino.physicsBody?.mass = 1.0
+        dino.physicsBody?.mass = 0.5
         dino.physicsBody?.isDynamic = true
         dino.physicsBody?.allowsRotation = false
         dino.physicsBody?.friction = 0
@@ -160,7 +160,7 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
         
         // Game Physics
         physicsBody = SKPhysicsBody(edgeLoopFrom: frame.inset(by: UIEdgeInsets(top: 0, left: 0, bottom: groundHeight/2, right: -100)))
-        physicsWorld.gravity = CGVector(dx: 0, dy: -9.8)
+        physicsWorld.gravity = CGVector(dx: 0, dy: -6.0)
         
         // Cactus
         cactus.zPosition = 1
@@ -170,18 +170,11 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
     override func update(_ currentTime: TimeInterval) {
         guard let gotReset = jumpingDinoDelegate?.resetGame else { return }
         if gotReset {
-            if self.numOfCactusShown - self.removedCactusNum != 0 {
-//                for child in self.children {
-//                    if let item = child as! SKLabelNode {
-//                        
-//                    }
-//                }
-            }
+            cactus.removeAllChildren()
             
             self.backgroundSpeed = 85
             self.lastUpdateTimeInterval = 0
             self.deltaTime = 0
-            self.groundHeight = 0
             self.lastTime = 0
             self.showCactusTimer = 0.0
             self.lastCactusTime = 0
@@ -191,8 +184,6 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
             
             self.jumpingDinoDelegate?.resetGame = false
             self.jumpingDinoDelegate?.isGame = true
-            
-            print(self.children)
         }
         
         guard let gotGame = jumpingDinoDelegate?.isGame else { return }
@@ -218,7 +209,7 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
             
             if Int(Double(lastCactusTime) + showCactusTimer) == Int(currentTime) {
                 lastCactusTime = Int(currentTime)
-                setupCactus(cactusGroup[Int.random(in: 0..<3)])
+                setupCactus()
             }
             
             deltaTime = currentTime - lastUpdateTimeInterval
