@@ -50,7 +50,7 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
             let ground = SKSpriteNode(imageNamed: "DinosaurGameGround")
             ground.zPosition = -1
             ground.size.width = frame.width
-            ground.position = CGPoint(x: CGFloat(i) * size.width - 2, y: ground.size.height/2)
+            ground.position = CGPoint(x: CGFloat(i) * size.width - 2, y: ground.size.height/3)
             ground.name = "Ground"
             ground.physicsBody = SKPhysicsBody(rectangleOf: ground.frame.size)
             ground.physicsBody?.isDynamic = false
@@ -141,7 +141,7 @@ class JumpingDinoScene: SKScene, SKPhysicsContactDelegate {
         
         setupGround()
         
-        dino.fontSize = 90
+        dino.fontSize = 75
         dino.position = CGPoint(x: dino.fontSize/2+10, y: groundHeight/2)
         dino.zPosition = 1
         dino.xScale = -1.0

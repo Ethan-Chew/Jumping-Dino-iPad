@@ -51,8 +51,12 @@ struct ContentView: View, JumpingDinoDelegate {
                     }
                 }
                 
-                VStack {
-                    HStack {
+                ZStack(alignment: .top) {
+                    SpriteView(scene: self.gameScene)
+                        .frame(width: reader.size.width, height: reader.size.height/3)
+                        .ignoresSafeArea()
+                    
+                    HStack(alignment: .top) {
                         Button {
                             gameData.updateCalibratedPoint = true
                             self.isGame = true
@@ -75,10 +79,6 @@ struct ContentView: View, JumpingDinoDelegate {
                                 .cornerRadius(10)
                         }
                     }.frame(height: (reader.size.height/3)/4)
-                    
-                    SpriteView(scene: self.gameScene)
-                        .frame(width: reader.size.width, height: ((reader.size.height/3)/4)*3)
-                        .ignoresSafeArea()
                 }
                 .frame(height: reader.size.height/3)
                 .background(.white)

@@ -15,6 +15,7 @@
 		592205F8296DABE1007F7677 /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 592205F7296DABE1007F7677 /* CameraViewController.swift */; };
 		5932C94A29739F0400E5EF29 /* JumpingDinoScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5932C94929739F0400E5EF29 /* JumpingDinoScene.swift */; };
 		59799A32297300E3007B809C /* GameData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59799A31297300E3007B809C /* GameData.swift */; };
+		59A560A729B5DEE60094BD60 /* GetDeviceDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59A560A629B5DEE60094BD60 /* GetDeviceDetails.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 		592205F9296DB619007F7677 /* Jumping-Dino-iPad-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Jumping-Dino-iPad-Info.plist"; sourceTree = SOURCE_ROOT; };
 		5932C94929739F0400E5EF29 /* JumpingDinoScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpingDinoScene.swift; sourceTree = "<group>"; };
 		59799A31297300E3007B809C /* GameData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameData.swift; sourceTree = "<group>"; };
+		59A560A629B5DEE60094BD60 /* GetDeviceDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetDeviceDetails.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				59799A31297300E3007B809C /* GameData.swift */,
+				59A560A629B5DEE60094BD60 /* GetDeviceDetails.swift */,
 			);
 			path = Manager;
 			sourceTree = "<group>";
@@ -169,6 +172,7 @@
 			files = (
 				592205F3296DAA98007F7677 /* DinoCanvasView.swift in Sources */,
 				59799A32297300E3007B809C /* GameData.swift in Sources */,
+				59A560A729B5DEE60094BD60 /* GetDeviceDetails.swift in Sources */,
 				592205F8296DABE1007F7677 /* CameraViewController.swift in Sources */,
 				592205E5296DA885007F7677 /* ContentView.swift in Sources */,
 				592205E3296DA885007F7677 /* Jumping_Dino_iPadApp.swift in Sources */,
